@@ -1,0 +1,105 @@
+.list_filters h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ff5912;
+}
+
+.category_menu ul {
+    display: flex;
+    list-style: none;
+
+}
+
+.category_menu ul li {
+    margin-right: 20px;
+
+}
+
+.list_filters label {
+    color: #34404b;
+    font-weight: 800;
+    font-size: 15px;
+}
+
+
+
+.list_filters {
+    background: #fff;
+    margin-top: 30px;
+    padding: 4% 40px;
+    border: 1px solid #c0c0c0;
+}
+
+.list_filters h3 {
+    margin: 1%;
+    display: inline-block;
+
+}
+
+.size_filter label,
+.brand_filter label {
+    margin-right: 12px;
+    padding: 5px;
+    display: inline-block;
+}
+
+.size_filter input,
+.brand_filter input {
+    display: none;
+}
+.submit input{
+    display: none;
+}
+.submit label {
+    color: black;
+    border: 1px solid black;
+}
+
+.list_filters input:checked + label {
+    color: indianred;
+    border: 1px solid indianred;
+}
+
+.h3_font {
+    font-family: fantasy;
+    color: chocolate;
+    text-align: center;
+}
+
+.h3_font span {
+    color: black
+}
+
+.card {
+    border: ;
+}
+
+.card h5 {
+    font-size: 30px;
+    text-align: center;
+    font-family: cursive;
+}
+
+.card p {
+    font-size: 15px;
+    text-align: center;
+    font-family: sans-serif;
+}
+
+.card ul li a {
+    text-align: center;
+}
+
+.card .card_hover:last-child {
+    display: none;
+
+}
+
+.card:hover .card_hover:first-child {
+    display: none;
+
+}
+
+.card:hover .card_hover:last-child {
+    display: inline-block;
+}
