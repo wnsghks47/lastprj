@@ -1,0 +1,617 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tech.mainPrj.dao.IDao">
+	<sql id="orderKind">
+		<choose>
+			<when test="param4==1">
+				PRCOUNT DESC
+			</when>
+			<when test="param4==2">
+				PRCOUNT ASC
+			</when>
+			<when test="param4==3">
+				PSCORE DESC
+			</when>
+			<when test="param4==4">
+				PSCORE ASC
+			</when>
+			<when test="param4==5">
+				PRICE DESC
+			</when>
+			<when test="param4==6">
+				PRICE ASC
+			</when>
+			<otherwise>
+				RPOINT DESC
+			</otherwise>
+		</choose>
+	</sql>
+
+	<sql id="productTopic">
+		<choose>
+			<when test="param1==1">
+				WHERE PBRAND LIKE #{param2}
+			</when>
+			<when test="param1==2">
+				WHERE PNAME LIKE #{param2}
+			</when>
+			<when test="param1==3">
+				WHERE PCATEGORY LIKE #{param2}
+			</when>
+			<otherwise>
+
+			</otherwise>
+		</choose>
+	</sql>
+
+	<select id="Top3" resultType="com.tech.mainPrj.dto.ProductInfo">
+		SELECT * FROM (SELECT ROWNUM R, C.*
+		FROM (SELECT B.*, PP.PRICE FROM PRODUCT_PRICE PP, (SELECT pi2.*,
+		A.PRCOUNT, A.RPOINT FROM PRODUCT_INFO pi2 LEFT OUTER JOIN (SELECT
+		PNUMBER, COUNT(RSCORE) PRCOUNT,
+		(AVG(RSCORE)-2.58*STDDEV(RSCORE)/SQRT(COUNT(RSCORE))) RPOINT FROM
+		REVIEW WHERE RSTEP = 0 GROUP BY PNUMBER) A ON pi2.PNUMBER = A.PNUMBER)
+		B WHERE PP.PNUMBER = B.PNUMBER AND PCATEGORY = #{param1} ORDER BY
+		RPOINT DESC NULLS LAST, PNAME ASC) C) WHERE R BETWEEN 1 AND 3
+	</select>
+
+	<select id="getDetail"
+		resultType="com.tech.mainPrj.dto.ProductInfo">
+		SELECT pi2.*, A.PRCOUNT FROM PRODUCT_INFO pi2 LEFT OUTER
+		JOIN (SELECT PNUMBER, COUNT(RSCORE) PRCOUNT FROM REVIEW WHERE RSTEP =
+		0 GROUP BY PNUMBER) A ON pi2.PNUMBER = A.PNUMBER WHERE pi2.PNUMBER =
+		#{param1}
+	</select>
+
+	<select id="getPrice"
+		resultType="com.tech.mainPrj.dto.ProductPrice">
+		SELECT * FROM PRODUCT_PRICE WHERE PNUMBER = #{param1}
+	</select>
+
+	<select id="getTag" resultType="com.tech.mainPrj.dto.ProductTag">
+		SELECT * FROM PRODUCT_TAG WHERE
+		PNUMBER = #{param1}
+	</select>
+
+	<select id="getIngredient"
+		resultType="com.tech.mainPrj.dto.ProductIngredient">
+		SELECT DISTINCT * FROM (SELECT product_ingredient.PNUMBER,
+		product_ingredient.INGREDIENT, ingredient_detail.ILEVEL,
+		ingredient_detail.IPURPOSE FROM
+		product_ingredient, ingredient_detail
+		WHERE product_ingredient.INGREDIENT =
+		ingredient_detail.INGREDIENT)
+		WHERE PNUMBER = #{param1}
+	</select>
+
+	<select id="getDanger"
+		resultType="com.tech.mainPrj.dto.ProductIngredient">
+		SELECT * FROM (SELECT DISTINCT * FROM (SELECT
+		product_ingredient.PNUMBER, product_ingredient.INGREDIENT,
+		ingredient_detail.ILEVEL, ingredient_detail.IPURPOSE FROM
+		product_ingredient, ingredient_detail WHERE
+		product_ingredient.INGREDIENT = ingredient_detail.INGREDIENT) WHERE
+		ILEVEL NOT IN ('0','1','2','3','4','5','6','1-2','1-3','2-3','3-4','4-5') AND PNUMBER = #{param1})
+	</select>
+
+	<select id="byCategory" resultType="com.tech.mainPrj.dto.ProductInfo">
+		SELECT * FROM (SELECT ROWNUM R, C.* FROM (SELECT B.*, pp.PRICE FROM PRODUCT_PRICE pp, (SELECT pi2.*, A.PRCOUNT, A.RPOINT FROM PRODUCT_INFO pi2 
+		LEFT OUTER JOIN (SELECT PNUMBER, COUNT(RSCORE) PRCOUNT, (AVG(RSCORE)-2.58*STDDEV(RSCORE)/SQRT(COUNT(RSCORE))) RPOINT FROM REVIEW 
+		WHERE RSTEP = 0 AND RGENDER like #{param5} AND REGEXP_LIKE(RAGE, #{param6}) AND REGEXP_LIKE(RSKIN, #{param7}) GROUP BY PNUMBER) A ON pi2.PNUMBER = A.PNUMBER) B 
+		WHERE pp.PNUMBER = B.PNUMBER AND PCATEGORY = #{param1} AND PRICE BETWEEN #{param8} AND #{param9} ORDER BY <include refid="orderKind" /> NULLS LAST, PNAME ASC) C) 
+		WHERE R BETWEEN #{param2} AND #{param3}
+	</select>
+
+	<select id="mostExpensive" resultType="String">
+		SELECT PRICE FROM (SELECT
+		* FROM PRODUCT_INFO PI2, PRODUCT_PRICE PP WHERE PI2.PNUMBER =
+		PP.PNUMBER AND PCATEGORY = #{param1} ORDER BY PRICE DESC) WHERE ROWNUM
+		= 1
+	</select>
+
+	<select id="reviewList"
+		resultType="com.tech.mainPrj.dto.ReviewInfo">
+		SELECT * FROM (SELECT ROWNUM R, A.* FROM (SELECT * FROM
+		REVIEW WHERE PNUMBER = #{param1} AND RSTEP = 0 AND RGENDER like
+		#{param4} AND REGEXP_LIKE(RAGE, #{param5}) AND REGEXP_LIKE(RSKIN,
+		#{param6}) ORDER BY RNUMBER DESC) A) WHERE R BETWEEN #{param2} AND
+		#{param3}
+	</select>
+
+	<select id="getrDetail"
+		resultType="com.tech.mainPrj.dto.ReviewInfo">
+		SELECT * FROM REVIEW WHERE RNUMBER = #{param1}
+	</select>
+
+	<insert id="insertReview">
+		INSERT INTO REVIEW VALUES (RNUMBER.nextval,
+		#{param1}, RNUMBER.CURRVAL, 0, 0, #{param2}, #{param3}, #{param4},
+		SYSDATE, #{param5}, #{param6}, #{param7}, #{param8}, 0, 0, 0)
+	</insert>
+
+	<select id="getAverage" resultType="string">
+		SELECT
+		SUBSTR(AVG(review.RSCORE), 1, 4) FROM REVIEW WHERE PNUMBER = #{param1}
+		AND RSTEP = 0
+	</select>
+
+	<update id="updateScore">
+		UPDATE PRODUCT_INFO SET PSCORE = #{param2} WHERE
+		PNUMBER = #{param1}
+	</update>
+
+	<select id="reviewCount" resultType="int">
+		SELECT COUNT(PNUMBER) FROM
+		REVIEW WHERE PNUMBER = #{param1}
+	</select>
+
+	<delete id="deleteReview">
+		DELETE FROM REVIEW WHERE RNUMBER = #{param1}
+	</delete>
+
+	<update id="modifyReview">
+		UPDATE REVIEW SET RTITLE = #{param2}, RSCORE =
+		#{param3}, RCONTENT = #{param4}, RDATE = #{param5} WHERE RNUMBER =
+		#{param1}
+	</update>
+
+	<select id="scoreList" resultType="Integer">
+		SELECT RSCORE FROM REVIEW
+		WHERE PNUMBER = #{param1}
+	</select>
+
+	<select id="searchList"
+		resultType="com.tech.mainPrj.dto.ProductInfo">
+		SELECT * FROM (SELECT ROWNUM R, A.* FROM (SELECT DISTINCT
+		pi2.* FROM PRODUCT_INFO pi2 , PRODUCT_TAG pt, PRODUCT_PRICE pp,
+		PRODUCT_INGREDIENT pi3 WHERE pi2.PNUMBER = pt.PNUMBER AND pi2.PNUMBER
+		= pp.PNUMBER AND pi2.PNUMBER = pi3.PNUMBER AND pi2.PNAME ||pi2.PBRAND
+		||pi2.PCATEGORY ||pi3.INGREDIENT ||pt.TAG ||pp.PRICE LIKE #{param1}
+		ORDER BY PNAME) A) WHERE R BETWEEN #{param2} AND #{param3}
+	</select>
+
+	<update id="updateStep">
+		UPDATE REVIEW SET RSTEP = RSTEP + 1 WHERE RGROUP =
+		#{param1} AND RSTEP > #{param2}
+	</update>
+
+	<insert id="insertResponse">
+		INSERT INTO REVIEW VALUES(RNUMBER.nextval, #{param1},
+		#{param3}, #{param4}, #{param5}, '답글', 0, #{param2}, SYSDATE,
+		#{param6}, #{param7}, #{param8}, #{param9}, 0, 0, 0)
+	</insert>
+
+	<select id="searchResponse"
+		resultType="com.tech.mainPrj.dto.ReviewInfo">
+		SELECT * FROM (SELECT ROWNUM R, A.* FROM (SELECT * FROM
+		REVIEW WHERE RGROUP = #{param1} AND RSTEP != 0 ORDER BY RSTEP ASC) A)
+		WHERE R BETWEEN #{param2} AND #{param3}
+	</select>
+
+	<select id="getReviewChart" resultType="com.tech.mainPrj.dto.ChartInfo">
+		SELECT L.CDATE, L.CNT0, NVL(A.CNT1,0) CNT1, NVL(B.CNT2,0) CNT2, NVL(C.CNT3,0) CNT3, NVL(D.CNT4,0) CNT4, NVL(E.CNT5,0) CNT5, NVL(F.CNT6,0) CNT6, NVL(G.CNT7,0) CNT7, NVL(H.CNT8,0) CNT8, NVL(I.CNT9,0) CNT9, NVL(J.CNT10,0) CNT10, NVL(K.CNT11,0) CNT11 
+		FROM (SELECT CDATE, COUNT(RNUMBER) CNT0 FROM (SELECT TO_CHAR(RDATE, 'yyyy-mm-dd') CDATE, RNUMBER FROM REVIEW r) GROUP BY CDATE) L
+		LEFT OUTER JOIN (SELECT CDATE, COUNT(RNUMBER) CNT1 FROM (SELECT TO_CHAR(RDATE, 'yyyy-mm-dd') CDATE, RNUMBER FROM REVIEW WHERE RGENDER = '♀') GROUP BY CDATE) A ON L.CDATE = A.CDATE
+		LEFT OUTER JOIN (SELECT CDATE, COUNT(RNUMBER) CNT2 FROM (SELECT TO_CHAR(RDATE, 'yyyy-mm-dd') CDATE, RNUMBER FROM REVIEW WHERE RGENDER = '♂') GROUP BY CDATE) B ON L.CDATE = B.CDATE
+		LEFT OUTER JOIN (SELECT CDATE, COUNT(RNUMBER) CNT3 FROM (SELECT TO_CHAR(RDATE, 'yyyy-mm-dd') CDATE, RNUMBER FROM REVIEW WHERE RAGE = '10대') GROUP BY CDATE) C ON L.CDATE = C.CDATE
+		LEFT OUTER JOIN (SELECT CDATE, COUNT(RNUMBER) CNT4 FROM (SELECT TO_CHAR(RDATE, 'yyyy-mm-dd') CDATE, RNUMBER FROM REVIEW WHERE RAGE = '20대') GROUP BY CDATE) D ON L.CDATE = D.CDATE
+		LEFT OUTER JOIN (SELECT CDATE, COUNT(RNUMBER) CNT5 FROM (SELECT TO_CHAR(RDATE, 'yyyy-mm-dd') CDATE, RNUMBER FROM REVIEW WHERE RAGE = '30대') GROUP BY CDATE) E ON L.CDATE = E.CDATE
+		LEFT OUTER JOIN (SELECT CDATE, COUNT(RNUMBER) CNT6 FROM (SELECT TO_CHAR(RDATE, 'yyyy-mm-dd') CDATE, RNUMBER FROM REVIEW WHERE RAGE = '40대 ↑') GROUP BY CDATE) F ON L.CDATE = F.CDATE
+		LEFT OUTER JOIN (SELECT CDATE, COUNT(RNUMBER) CNT7 FROM (SELECT TO_CHAR(RDATE, 'yyyy-mm-dd') CDATE, RNUMBER FROM REVIEW WHERE RSKIN = '건성') GROUP BY CDATE) G ON L.CDATE = G.CDATE
+		LEFT OUTER JOIN (SELECT CDATE, COUNT(RNUMBER) CNT8 FROM (SELECT TO_CHAR(RDATE, 'yyyy-mm-dd') CDATE, RNUMBER FROM REVIEW WHERE RSKIN = '지성') GROUP BY CDATE) H ON L.CDATE = H.CDATE
+		LEFT OUTER JOIN (SELECT CDATE, COUNT(RNUMBER) CNT9 FROM (SELECT TO_CHAR(RDATE, 'yyyy-mm-dd') CDATE, RNUMBER FROM REVIEW WHERE RSKIN = '중성') GROUP BY CDATE) I ON L.CDATE = I.CDATE
+		LEFT OUTER JOIN (SELECT CDATE, COUNT(RNUMBER) CNT10 FROM (SELECT TO_CHAR(RDATE, 'yyyy-mm-dd') CDATE, RNUMBER FROM REVIEW WHERE RSKIN = '복합성') GROUP BY CDATE) J ON L.CDATE = J.CDATE
+		LEFT OUTER JOIN (SELECT CDATE, COUNT(RNUMBER) CNT11 FROM (SELECT TO_CHAR(RDATE, 'yyyy-mm-dd') CDATE, RNUMBER FROM REVIEW WHERE RSKIN = '민감성') GROUP BY CDATE) K ON L.CDATE = K.CDATE 
+		WHERE L.CDATE BETWEEN #{param1} AND #{param2} ORDER BY CDATE ASC
+	</select>
+
+	<select id="getPieAge" resultType="int">
+		SELECT COUNT(RNUMBER) CNT FROM
+		REVIEW WHERE RDATE BETWEEN #{param1} AND #{param2} GROUP BY RAGE ORDER
+		BY RAGE ASC
+	</select>
+
+	<select id="getPieGender" resultType="int">
+		SELECT COUNT(RNUMBER) CNT
+		FROM REVIEW WHERE RDATE BETWEEN #{param1} AND #{param2} GROUP BY
+		RGENDER ORDER BY RGENDER DESC
+	</select>
+
+	<select id="getPieSkin" resultType="int">
+		SELECT COUNT(RNUMBER) CNT
+		FROM REVIEW WHERE RDATE BETWEEN #{param1} AND #{param2} GROUP BY RSKIN
+		ORDER BY RSKIN ASC
+	</select>
+
+	<!-- 회원 가입 -->
+	<!-- 아이디에 기본키를 줘서 나중에 아이디 중복체크 방지를 하면.. -->
+	<insert id="register">
+		INSERT INTO
+		MEMBERLIST(MNUM,ID,PASS,MAIL,PHONE,BIRTH,SKINTYPE,GENDER,JOINDATE,AUTHORITY)
+		VALUES(MNUM.nextval,#{id},#{pass},#{mail},#{phone},#{birth},#{skintype},#{gender},SYSTIMESTAMP,1)
+	</insert>
+
+	<select id="login" resultType="com.tech.mainPrj.dto.MemberDto">
+		SELECT*FROM MEMBERLIST WHERE
+		ID=#{id} AND PASS=#{pass}
+	</select>
+
+	<select id="checkid" parameterType="String" resultType="Integer">
+		SELECT
+		COUNT(*) FROM MEMBERLIST WHERE ID = #{id}
+	</select>
+
+	<update id="updateinfo">
+		UPDATE MEMBERLIST SET
+		PASS=#{param2},MAIL=#{param3},PHONE=#{param4},SKINTYPE=#{param5} WHERE
+		ID=#{param1}
+	</update>
+
+	<update id="deleteInfo">
+		UPDATE MEMBERLIST SET AUTHORITY = 2 WHERE ID=#{param1} AND
+		PASS=#{param2}
+	</update>
+
+	<update id="Findpass" parameterType="Map">
+		UPDATE MEMBERLIST SET
+		PASS=#{param3} WHERE ID=#{param1} AND MAIL=#{param2}
+	</update>
+
+	<!-- 로그인 관련 끝 -->
+
+	<insert id="insertLoD">
+		INSERT INTO LOD VALUES (#{param1}, #{param2},
+		#{param3}, 0)
+	</insert>
+
+	<update id="updateLoD">
+		UPDATE LOD SET LOD = #{param3} WHERE MNUM =
+		#{param1}
+		AND RNUMBER = #{param2}
+	</update>
+
+	<insert id="insertDec">
+		INSERT INTO LOD VALUES (#{param1}, #{param2}, 0,
+		#{param3})
+	</insert>
+
+	<update id="updateDec">
+		UPDATE LOD SET DECLARATION = #{param3} WHERE MNUM =
+		#{param1} AND RNUMBER
+		= #{param2}
+	</update>
+
+	<insert id="insertWishList">
+		INSERT INTO WISHLIST VALUES (#{param1}, #{param2},
+		#{param3})
+	</insert>
+
+	<update id="updateWishList">
+		UPDATE WISHLIST SET WISH = #{param3} WHERE MNUM =
+		#{param1} AND PNUMBER = #{param2}
+	</update>
+
+	<select id="getLoD"
+		resultType="com.tech.mainPrj.dto.LikeOrDislike">
+		SELECT * FROM LOD WHERE MNUM = #{param1}
+	</select>
+
+	<select id="getWishList" resultType="com.tech.mainPrj.dto.Wish">
+		SELECT * FROM WISHLIST WHERE
+		MNUM = #{param1}
+	</select>
+
+	<select id="countLike" resultType="string">
+		SELECT COUNT(LOD) CNT FROM LOD
+		WHERE RNUMBER = #{param1} AND LOD = 1 GROUP BY RNUMBER
+	</select>
+
+	<select id="countDislike" resultType="string">
+		SELECT COUNT(LOD) CNT FROM
+		LOD WHERE RNUMBER = #{param1} AND LOD = 2 GROUP BY RNUMBER
+	</select>
+
+	<select id="countDec" resultType="string">
+		SELECT COUNT(LOD) CNT FROM LOD
+		WHERE RNUMBER = #{param1} AND DECLARATION = 1 GROUP BY RNUMBER
+	</select>
+
+	<update id="updateReviewLod">
+		UPDATE REVIEW SET RLIKE = #{param2}, RDISLIKE =
+		#{param3} WHERE RNUMBER = #{param1}
+	</update>
+
+	<update id="updateReviewDec">
+		UPDATE REVIEW SET RDECLARATION = #{param2} WHERE
+		RNUMBER = #{param1}
+	</update>
+
+	<select id="getReviewContent" resultType="string">
+		SELECT RCONTENT FROM
+		REVIEW WHERE RNUMBER = #{param1}
+	</select>
+
+	<select id="getEventContent" resultType="string">
+		SELECT EVENTIMG FROM
+		EVENT WHERE ENUMBER = #{param1}
+	</select>
+
+	<delete id="deleteLoD">
+		DELETE FROM LOD WHERE RNUMBER = #{param1}
+	</delete>
+
+	<select id="getReviewList"
+		resultType="com.tech.mainPrj.dto.ReviewInfo">
+		SELECT B.RNUMBER, B.PNUMBER, B.RID, B.RTITLE, B.RDATE,
+		B.RDECLARATION FROM (SELECT ROWNUM R, A.* FROM (SELECT * FROM (SELECT
+		RNUMBER, PNUMBER ,RID, RTITLE, TO_CHAR(r.RDATE, 'yyyy-mm-dd') RDATE,
+		RDECLARATION FROM REVIEW r) WHERE RDATE BETWEEN #{param1} AND
+		#{param2} ORDER BY RDECLARATION DESC, RNUMBER DESC) A) B WHERE R
+		BETWEEN #{param3} AND #{param4}
+	</select>
+
+	<select id="getReviewListCnt" resultType="int">
+		SELECT COUNT(RNUMBER)
+		FROM (SELECT TO_CHAR(RDATE, 'yyyy-mm-dd') CDATE, RNUMBER FROM REVIEW)
+		WHERE CDATE BETWEEN #{param1} AND #{param2}
+	</select>
+
+	<select id="getMemberList"
+		resultType="com.tech.mainPrj.dto.MemberDto">
+		SELECT * FROM (SELECT (RANK() OVER(ORDER BY C.DECCOUNT DESC, C.RCOUNT DESC)) R, C.* FROM 
+		(SELECT M2.*, B.RCOUNT, B.DECCOUNT FROM 
+		(SELECT MNUM, COUNT(RNUMBER) RCOUNT, SUM(A.RDEC) DECCOUNT FROM
+		(SELECT MNUM, RNUMBER, NVL(RDECLARATION, 0) RDEC FROM 
+		(SELECT MNUM, RNUMBER, RDECLARATION FROM MEMBERLIST M LEFT OUTER JOIN 
+		(SELECT * FROM (SELECT RNUMBER, RID, RDECLARATION, RSTEP, TO_CHAR(RDATE, 'yyyy-mm-dd') CDATE FROM 
+		(SELECT * FROM REVIEW WHERE RSTEP = 0)) WHERE CDATE BETWEEN #{param1} AND #{param2}) R ON M.ID = R.RID)) A GROUP BY A.MNUM) B, 
+		MEMBERLIST M2 WHERE B.MNUM = M2.MNUM) C) WHERE R BETWEEN #{param3} AND #{param4}
+	</select>
+
+	<select id="getMemberListCnt" resultType="int">
+		SELECT COUNT(MNUM) FROM
+		MEMBERLIST
+	</select>
+
+	<select id="getProductList"
+		resultType="com.tech.mainPrj.dto.ProductInfo">
+		SELECT B.* FROM (SELECT ROWNUM R, A.* FROM (SELECT * FROM PRODUCT_INFO
+		<include refid="productTopic" />
+		ORDER BY PNUMBER DESC) A) B WHERE R BETWEEN #{param3} AND #{param4}
+	</select>
+
+	<update id="updateProductInfo">
+		UPDATE PRODUCT_INFO SET PBRAND = #{param2}, PNAME =
+		#{param3}, PINFORMATION = #{param4} WHERE PNUMBER = #{param1}
+	</update>
+
+	<update id="updateEvent">
+		UPDATE EVENT SET ETITLE = #{param2}, ESTARTDATE =
+		#{param3}, EENDDATE = #{param4}, EVENTIMG = #{param5} WHERE ENUMBER =
+		#{param1}
+	</update>
+
+	<delete id="deletePrice">
+		DELETE FROM PRODUCT_PRICE WHERE PNUMBER = #{param1}
+	</delete>
+
+	<delete id="deleteTags">
+		DELETE FROM PRODUCT_TAG WHERE PNUMBER = #{param1}
+	</delete>
+
+	<delete id="deleteIngredient">
+		DELETE FROM PRODUCT_INGREDIENT WHERE PNUMBER =
+		#{param1}
+	</delete>
+
+	<delete id="deleteProduct">
+		DELETE FROM PRODUCT_INFO WHERE PNUMBER = #{param1}
+	</delete>
+
+	<delete id="deleteEvent">
+		DELETE FROM EVENT WHERE ENUMBER = #{param1}
+	</delete>
+
+	<delete id="deleteMemberLoD">
+		DELETE FROM LOD WHERE MNUM = #{param1}
+	</delete>
+
+	<delete id="deleteMemberData">
+		DELETE FROM MEMBERLIST WHERE MNUM = #{param1}
+	</delete>
+
+	<select id="getRnumberList" resultType="int">
+		SELECT RNUMBER FROM
+		REVIEW WHERE PNUMBER = #{param1}
+	</select>
+
+	<insert id="updatePrice">
+		INSERT INTO PRODUCT_PRICE VALUES(#{param1},
+		#{param2}, #{param3})
+	</insert>
+
+	<insert id="updateTags">
+		INSERT INTO PRODUCT_TAG VALUES(#{param1}, #{param2})
+	</insert>
+
+	<select id="getProductCount" resultType="float">
+		SELECT COUNT(PNUMBER) FROM PRODUCT_INFO
+		<include refid="productTopic" />
+	</select>
+
+	<insert id="insertProduct">
+		INSERT INTO PRODUCT_INFO VALUES(PNUMBER.nextval,
+		#{param1}, #{param2}, #{param3}, #{param4}, 0)
+	</insert>
+
+	<insert id="insertPrice">
+		INSERT INTO PRODUCT_PRICE VALUES(#{param3},
+		#{param1}, #{param2})
+	</insert>
+
+	<insert id="insertTag">
+		INSERT INTO PRODUCT_TAG VALUES(#{param2}, #{param1})
+	</insert>
+
+	<insert id="insertIngredient">
+		INSERT INTO PRODUCT_INGREDIENT VALUES(#{param2},
+		#{param1})
+	</insert>
+
+	<insert id="insertIngredientDetail">
+		INSERT INTO INGREDIENT_DETAIL VALUES(#{param1},
+		#{param2}, #{param3})
+	</insert>
+
+	<select id="getPnumber" resultType="int">
+		SELECT PNUMBER FROM (SELECT
+		ROWNUM R, PNUMBER FROM (SELECT PNUMBER FROM PRODUCT_INFO PI2 ORDER BY
+		PNUMBER DESC)) WHERE R = 1
+	</select>
+
+	<select id="getReviewById"
+		resultType="com.tech.mainPrj.dto.ReviewInfo">
+		SELECT * FROM REVIEW WHERE RID = #{param1} AND RSTEP = 0
+		ORDER BY RNUMBER DESC
+	</select>
+
+	<select id="getMyWishList"
+		resultType="com.tech.mainPrj.dto.ProductInfo">
+		SELECT PI2.* FROM WISHLIST W, PRODUCT_INFO PI2 WHERE
+		W.PNUMBER = PI2.PNUMBER AND MNUM = #{param1} AND WISH = 1 ORDER BY
+		PI2.PNUMBER DESC
+	</select>
+
+	<update id="updateMemberAuthority">
+		UPDATE MEMBERLIST SET AUTHORITY = #{param2} WHERE
+		MNUM = #{param1}
+	</update>
+
+	<!-- 이벤트 관련 xml -->
+
+	<insert id="insertevent">
+		INSERT INTO EVENT VALUES(EVENTNUMBER.NEXTVAL,
+		#{param1}, #{param2},
+		#{param3}, #{param4})
+	</insert>
+
+	<select id="eventview" resultType="com.tech.mainPrj.dto.Event">
+		SELECT * FROM EVENT WHERE
+		(EENDDATE >= SYSDATE) ORDER BY ENUMBER DESC
+	</select>
+
+	<select id="event" resultType="com.tech.mainPrj.dto.Event">
+		SELECT * FROM EVENT WHERE ENUMBER
+		= #{param1}
+	</select>
+
+	<select id="getEventList"
+		resultType="com.tech.mainPrj.dto.Event">
+		SELECT * FROM EVENT ORDER BY ENUMBER DESC
+	</select>
+
+	<select id="getEventCount" resultType="float">
+		SELECT COUNT(ENUMBER) FROM
+		EVENT
+	</select>
+
+	<select id="getqnaList" resultType="com.tech.mainPrj.dto.Replyqna">
+		SELECT * FROM
+		
+		(
+		
+		SELECT ROWNUM AS RNUM, A.*
+		FROM 
+		(
+		SELECT * FROM QNA ORDER BY QREG_DT DESC 
+		) A
+		
+		) B
+		WHERE RNUM BETWEEN #{rowStart} AND #{rowEnd}
+	</select>
+	
+	<insert id="insertqna">
+		INSERT INTO QNA(QBID, QTITLE, QCONTENT, QREG_ID, qreg_dt) VALUES(QNA_SEQ.NEXTVAL, #{param1}, #{param2}, #{param3}, sysdate)
+	</insert>
+	
+	<select id="qnadetail" resultType="com.tech.mainPrj.dto.Replyqna">
+		SELECT * FROM QNA WHERE QBID = #{param1}
+	</select>
+	
+
+	<select id="getqnaContent" resultType="com.tech.mainPrj.dto.Replyqna">
+
+		SELECT
+
+			*
+
+		FROM
+
+			qna
+
+		WHERE
+
+			qbid = #{qbid}
+
+	</select>
+
+	
+	
+
+	<update id="updateqna">
+
+		UPDATE qna SET qtitle = #{qtitle} , qcontent = #{qcontent} where qbid = #{qbid}
+	</update>
+
+	
+
+	<delete id="deleteqna">
+
+		DELETE FROM qna
+
+		WHERE QBID = #{param1}
+
+	</delete>
+	
+	<delete id="deletereply">
+
+		DELETE FROM replyqna
+
+		WHERE rno = #{param1}
+
+	</delete>
+
+	
+
+	<update id="updateViewCnt">
+
+		UPDATE TBL_BOARD SET
+
+			VIEW_CNT = VIEW_CNT + 1
+
+		WHERE
+
+			qbid = #{qbid}
+
+	</update>
+
+	<select id="total" resultType="Integer">
+		select count(*) from qna
+	</select>
+	
+	<select id="getQregId" resultType="String">
+		SELECT QREG_ID FROM QNA WHERE QBID = #{qbid} 
+	</select>
+	
+	<select id="qnadetail1" resultType="com.tech.mainPrj.dto.Replyqna1">
+		SELECT * FROM replyqna WHERE bno = #{param1} order by rno desc
+	</select>
+	
+	<insert id="insertreply">
+		INSERT INTO replyqna(bno,rno, bcontent,reg_dt,bwriter) VALUES(#{param1}, QNA_REPLY.NEXTVAL, #{param2}, sysdate, #{param3})
+	</insert>
+</mapper>

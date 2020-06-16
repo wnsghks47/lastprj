@@ -1,0 +1,180 @@
+CREATE TABLE product_info(
+PNUMBER NUMBER PRIMARY KEY,
+PNAME varchar2(100),
+PBRAND varchar2(100),
+PCATEGORY varchar2(50),
+PINFORMATION varchar2(1000),
+PSCORE NUMBER
+);
+
+SELECT * FROM PRODUCT_INFO pi2 ;
+
+CREATE TABLE product_tag(
+PNUMBER NUMBER REFERENCES product_info(PNUMBER),
+TAG varchar2(50)
+);
+
+
+CREATE TABLE product_price(
+PNUMBER NUMBER REFERENCES product_info(PNUMBER),
+UNIT varchar2(20),
+PRICE NUMBER
+);
+
+
+CREATE TABLE product_ingredient(
+PNUMBER NUMBER REFERENCES product_info(PNUMBER),
+INGREDIENT varchar2(200)
+);
+
+
+CREATE TABLE ingredient_detail(
+INGREDIENT varchar2(200),
+ILEVEL varchar2(10),
+IPURPOSE varchar2(1000)
+);
+
+
+CREATE SEQUENCE PNUMBER START WITH 1 INCREMENT BY 1;
+
+
+DELETE FROM product_tag;
+DELETE FROM product_price;
+DELETE FROM product_ingredient;
+DELETE FROM ingredient_detail;
+DELETE FROM product_info;
+
+
+DROP SEQUENCE PNUMBER;
+
+
+DROP TABLE product_tag;
+DROP TABLE product_price;
+DROP TABLE product_ingredient;
+DROP TABLE ingredient_detail;
+DROP TABLE product_info;
+
+-- 리뷰 관련 쿼리 시작
+
+CREATE TABLE REVIEW(
+RNUMBER NUMBER PRIMARY KEY,
+PNUMBER NUMBER REFERENCES product_info(PNUMBER),
+RGROUP NUMBER,
+RSTEP NUMBER,
+RINDENT NUMBER,
+RTITLE varchar2(200),
+RSCORE NUMBER,
+RCONTENT varchar2(4000),
+RDATE timestamp,
+RID varchar2(20),
+RAGE varchar2(10),
+RGENDER varchar2(10),
+RSKIN varchar2(10),
+RLIKE NUMBER,
+RDISLIKE NUMBER,
+RDECLARATION NUMBER
+);
+
+DELETE FROM REVIEW;
+
+CREATE SEQUENCE RNUMBER START WITH 1 INCREMENT BY 1;
+
+DROP SEQUENCE RNUMBER;
+
+
+-- 회원 관련 쿼리 시작
+
+
+CREATE TABLE memberlist(
+mnum NUMBER PRIMARY KEY,
+id varchar2(20),
+pass varchar2(500),
+mail varchar2(50),
+phone varchar2(40),
+birth varchar2(50),
+skintype varchar2(40),
+gender varchar2(20),
+joindate timestamp,
+authority NUMBER
+);
+
+CREATE SEQUENCE MNUM START WITH 1 INCREMENT BY 1;
+
+SELECT * FROM MEMBERLIST m ;
+
+CREATE TABLE LOD(
+MNUM NUMBER REFERENCES MEMBERLIST(MNUM),
+RNUMBER NUMBER REFERENCES REVIEW(RNUMBER),
+LOD NUMBER,
+DECLARATION NUMBER
+);
+
+CREATE TABLE WISHLIST(
+MNUM NUMBER,
+PNUMBER NUMBER,
+WISH NUMBER
+);
+
+SELECT * FROM LOD;
+
+SELECT * FROM MEMBERLIST ;
+
+SELECT * FROM WISHLIST ;
+
+DELETE FROM LOD ;
+
+DELETE FROM WISHLIST ;
+
+UPDATE MEMBERLIST SET AUTHORITY = 1 WHERE MNUM = 45;
+
+-- 이벤트 관련 테이블
+
+CREATE TABLE event(
+ENUMBER NUMBER PRIMARY KEY,
+ETITLE VARCHAR2 (100),
+ESTARTDATE varchar2(50),
+EENDDATE varchar2(50),
+EVENTIMG VARCHAR2(1000)
+);
+
+
+CREATE SEQUENCE eventNumber START WITH 1 INCREMENT BY 1;
+
+
+create table qna(
+qbid number,
+qcate varchar2(50),
+qtitle varchar2(100),
+qcontent varchar2(1000),
+tag varchar2(50),
+qreg_id varchar2(100),
+qreg_dt date,
+qdit_dt date
+);
+
+CREATE SEQUENCE qna_seq START WITH 1 INCREMENT BY 1;
+
+
+INSERT INTO replyqna(bno, bcontent) VALUES (0,asdsad);
+CREATE TABLE replyqna(
+bno NUMBER,
+rno NUMBER PRIMARY key,
+bcontent varchar2(1000),
+bwriter varchar2(100),
+reg_dt DATE
+);
+
+CREATE SEQUENCE qna_reply START WITH 1 INCREMENT BY 1; 
+
+DROP TABLE replyqna;
+
+DELETE FROM REPLYQNA r ;
+
+DELETE FROM QNA q ;
+
+DELETE FROM LOD l ;
+
+DELETE FROM WISHLIST w ;
+
+SELECT * FROM MEMBERLIST m ;
+
